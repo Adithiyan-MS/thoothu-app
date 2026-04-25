@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
 
 // CRITICAL: This tells axios to ALWAYS send our secure JWT cookie to the backend!
 axios.defaults.withCredentials = true;
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5000/api" : "/api";
 
 export const useAuthStore = create((set, get) => ({
     authUser: null,
@@ -20,7 +20,7 @@ export const useAuthStore = create((set, get) => ({
         // If we are already connected, don't connect again!
         if (!authUser || socket?.connected) return;
 
-        const newSocket = io("http://localhost:5000", {
+        const newSocket = io(import.meta.env.MODE === "development" ? "http://localhost:5000" : "/", {
             query: { userId: authUser._id }
         });
 
