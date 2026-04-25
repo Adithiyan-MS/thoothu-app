@@ -65,10 +65,10 @@ export default function Chat() {
     };
 
     return (
-        <div style={{ height: '100vh', padding: '20px', display: 'flex', gap: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+        <div className="chat-container" style={{ height: '100vh', padding: '20px', display: 'flex', gap: '20px', maxWidth: '1400px', margin: '0 auto' }}>
 
             {/* SIDEBAR */}
-            <div className="glass-panel" style={{ width: '350px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div className={`glass-panel chat-sidebar ${selectedUser ? 'hide-on-mobile' : ''}`} style={{ width: '350px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{ padding: '24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h2 style={{ fontSize: '1.2rem', fontWeight: '600' }}>Chats</h2>
@@ -156,11 +156,18 @@ export default function Chat() {
             </div>
 
             {/* MAIN CHAT AREA */}
-            <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div className={`glass-panel chat-main ${!selectedUser ? 'hide-on-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 {selectedUser ? (
                     <>
                         {/* Chat Header */}
-                        <div style={{ padding: '24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <div className="mobile-padding" style={{ padding: '24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            <button 
+                                onClick={() => setSelectedUser(null)} 
+                                className="hide-on-desktop"
+                                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '5px', display: window.innerWidth <= 768 ? 'block' : 'none' }}
+                            >
+                                ←
+                            </button>
                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <UserIcon size={20} color="var(--text-secondary)" />
                             </div>

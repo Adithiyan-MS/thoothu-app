@@ -129,3 +129,42 @@ body {
     font-size: 0.9rem;
     font-weight: 500;
 }
+
+.hide-on-desktop {
+    display: none;
+}
+
+/* --- MOBILE RESPONSIVENESS --- */
+@media (max-width: 768px) {
+    /* Main Layout */
+    .chat-container {
+        padding: 0 !important; /* No padding on mobile body */
+        gap: 0 !important;
+    }
+    
+    .chat-sidebar {
+        width: 100% !important;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+    
+    .chat-main {
+        width: 100% !important;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+
+    /* Used to hide sidebar when chat is active, and vice versa */
+    .hide-on-mobile {
+        display: none !important;
+    }
+
+    .hide-on-desktop {
+        display: block !important;
+    }
+
+    /* Make padding smaller on mobile inside the app */
+    .mobile-padding {
+        padding: 16px !important;
+    }
+}
