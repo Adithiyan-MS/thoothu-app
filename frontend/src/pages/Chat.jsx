@@ -43,6 +43,18 @@ export default function Chat() {
         }
     }, []);
 
+    // Deep Linking: If we clicked a notification while logged out or tab closed, open it now!
+    useEffect(() => {
+        const targetId = localStorage.getItem("openChatOnLoad");
+        if (targetId && users.length > 0) {
+            const userToOpen = users.find(u => u._id === targetId);
+            if (userToOpen) {
+                setSelectedUser(userToOpen);
+                localStorage.removeItem("openChatOnLoad"); // Clear it so it doesn't open every time!
+            }
+        }
+    }, [users, setSelectedUser]);
+
     // Debounce Search logic
     useEffect(() => {
         const timeoutId = setTimeout(() => {

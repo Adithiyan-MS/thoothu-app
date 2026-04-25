@@ -104,32 +104,67 @@ export const useChatStore = create((set, get) => ({
         });
 
 
-        // Listen for Smart Notifications
+        // Listen for Smart Notifications (When in-app but in a different chat)
         socket.on("showInAppNotification", (msg) => {
-            toast('New Message Received!', { icon: '💬' });
+            const sender = get().users.find((u) => u._id === msg.senderId);
+            const senderName = sender ? sender.username : "Someone";
+
+            toast.custom((t) => (
+                <div
+                    onClick={() => {
+                        get().setSelectedUser(sender);
+                        toast.dismiss(t.id);
+                    }}
+                    style={{
+                        background: 'rgba(15, 23, 42, 0.9)',
+                        backdropFilter: 'blur(12px)',
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: '1px solid var(--accent-primary)',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        cursor: 'pointer',
+                        boxShadow: '0 10px 25px -5px rgba(168, 85, 247, 0.4)',
+                        animation: t.visible ? 'fade-in 0.3s ease' : 'fade-out 0.3s ease'
+                    }}
+                >
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '1.2rem' }}>💬</span>
+                    </div>
+                    <div>
+                        <p style={{ fontWeight: '600', fontSize: '0.9rem', margin: 0 }}>{senderName}</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, opacity: 0.8 }}>{msg.text.substring(0, 30)}{msg.text.length > 30 ? "..." : ""}</p>
+                    </div>
+                </div>
+            ), { duration: 4000, position: 'top-right' });
         });
 
+        // Listen for Browser Notifications (When tab is minimized/inactive)
         socket.on("showBrowserNotification", (msg) => {
             if (Notification.permission === "granted") {
-                // 1. Find the sender's name from our users list
                 const sender = get().users.find((u) => u._id === msg.senderId);
                 const senderName = sender ? sender.username : "Someone";
 
-                // 2. Create the notification with their name
-                const notification = new Notification(`New message from ${senderName}`, {
-                    body: msg.text
+                const notification = new Notification(`Thoothu: ${senderName}`, {
+                    body: msg.text,
+                    icon: "/logo192.png", // Or a generic message icon
+                    tag: msg.senderId, // Prevents notification stacking
+                    requireInteraction: false
                 });
 
-                // 3. Make it clickable!
                 notification.onclick = () => {
-                    window.focus(); // Brings the browser tab to the front
+                    window.focus();
                     if (sender) {
-                        get().setSelectedUser(sender); // Automatically opens their chat!
+                        get().setSelectedUser(sender);
+                    } else {
+                        // If users list isn't loaded yet, store it to open after login/load
+                        localStorage.setItem("openChatOnLoad", msg.senderId);
                     }
                 };
             }
         });
-
     },
 
     unsubscribeFromMessages: () => {
