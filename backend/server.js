@@ -30,10 +30,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 
-// A simple test route
-app.get('/', (req, res) => {
-    res.send('Chat API is running...');
-});
 
 // --- PRODUCTION DEPLOYMENT LOGIC ---
 const __dirname = path.resolve();
