@@ -43,7 +43,7 @@ if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
     // 2. Any route that isn't our /api route should load the React app (so React Router works!)
-    app.get("*", (req, res) => {
+    app.use((req, res) => {
         res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
     });
 }
