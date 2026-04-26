@@ -7,6 +7,7 @@ import Verify from './pages/Verify';
 import Chat from './pages/Chat';
 import { useAuthStore } from './store/useAuthStore'; // Import our store!
 import Profile from './pages/Profile';
+import Landing from './pages/Landing';
 
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -40,18 +41,15 @@ function App() {
       />
 
       <Routes>
-        {/* If they are NOT logged in, show Login. If they ARE logged in, redirect them to Chat! */}
-        <Route path="/login" element={!authUser ? <Login /> : <Navigate to="/chat" />} />
-        <Route path="/register" element={!authUser ? <Register /> : <Navigate to="/chat" />} />
-        <Route path="/verify" element={!authUser ? <Verify /> : <Navigate to="/chat" />} />
+        {/* Landing Page */}
+        <Route path="/" element={!authUser ? <Landing /> : <Navigate to="/chat" />} />
 
-        {/* If they ARE logged in, show Chat. If they are NOT logged in, kick them to Login! */}
-        <Route path="/chat" element={authUser ? <Chat /> : <Navigate to="/login" />} />
+        {/* Protected Routes */}
+        <Route path="/chat" element={authUser ? <Chat /> : <Navigate to="/" />} />
+        <Route path="/profile" element={authUser ? <Profile /> : <Navigate to="/" />} />
 
-        <Route path="*" element={<Navigate to="/login" />} />
-
-        <Route path="/profile" element={authUser ? <Profile /> : <Navigate to="/login" />} />
-
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

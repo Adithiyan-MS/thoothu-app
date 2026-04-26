@@ -55,25 +55,34 @@ export const useAuthStore = create((set, get) => ({
     checkAuth: async () => {
         set({ isCheckingAuth: true });
         try {
-            const localRes = await axios.get(`${BASE_URL}/users/profile`);
-            set({ authUser: localRes.data });
-            get().connectSocket();
-        } catch (localError) {
-            try {
-                const centralRes = await axios.get(`${AUTH_URL}/me`, { withCredentials: true });
-                if (centralRes.data.token) {
-                    localStorage.setItem("token", centralRes.data.token);
-                    const userData = {
-                        ...centralRes.data.user,
-                        profilePic: centralRes.data.user.profilePic || centralRes.data.user.avatar
-                    };
-                    set({ authUser: userData });
-                    get().connectSocket();
-                }
-            } catch (centralError) {
-                set({ authUser: null });
-                localStorage.removeItem("token");
+            // 1. ALWAYS check with the Central Auth Service first (SSO Source of Truth)
+            const centralRes = await axios.get(`${AUTH_URL}/me`, { withCredentials: true });
+            
+            if (centralRes.data.token) {
+                // 2. Central says we are logged in! Save the token
+                localStorage.setItem("token", centralRes.data.token);
+                
+                // 3. Now verify/get profile from our local backend using this token
+                // (The interceptor will add the token to the header automatically)
+                const localRes = await axios.get(`${BASE_URL}/users/profile`);
+                
+                const userData = {
+                    ...localRes.data,
+                    ...centralRes.data.user, // Prefer central data for core identity
+                    profilePic: localRes.data.profilePic || centralRes.data.user.avatar
+                };
+                
+                set({ authUser: userData });
+                get().connectSocket();
+            } else {
+                throw new Error("No token from central");
             }
+        } catch (error) {
+            // If central auth fails, we are logged out everywhere
+            set({ authUser: null });
+            localStorage.removeItem("token");
+            // Also try to clear local cookies just in case
+            try { await axios.post(`${BASE_URL}/auth/logout`); } catch(e) {}
         } finally {
             set({ isCheckingAuth: false });
         }
@@ -216,13 +225,19 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
+            // 1. Log out from the Central Auth Service (clears central cookies)
             await axios.post(`${AUTH_URL}/logout`, {}, { withCredentials: true });
+            
+            // 2. Log out from the local backend (clears local cookies)
+            await axios.post(`${BASE_URL}/auth/logout`);
+
+            // 3. Clear local storage and state
             localStorage.removeItem("token");
             set({ authUser: null });
             get().disconnectSocket();
-            toast.success("Logged out successfully");
+            toast.success("Logged out everywhere");
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to logout");
+            toast.error("Failed to logout completely");
         }
     }
 }));
