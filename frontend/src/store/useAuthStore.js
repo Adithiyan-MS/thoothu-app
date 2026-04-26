@@ -55,7 +55,18 @@ export const useAuthStore = create((set, get) => ({
     checkAuth: async () => {
         set({ isCheckingAuth: true });
         try {
-            // 1. ALWAYS check with the Central Auth Service first (SSO Source of Truth)
+            // 1. Check if we just arrived with an SSO token in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const ssoToken = urlParams.get('sso_token');
+
+            if (ssoToken) {
+                localStorage.setItem("token", ssoToken);
+                // Clean up the URL so it looks professional (remove the token from the browser bar)
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            // 2. ALWAYS check with the Central Auth Service as the Source of Truth
+            // We use the token from localStorage if we have it, or fallback to cookies (withCredentials)
             const centralRes = await axios.get(`${AUTH_URL}/me`, { withCredentials: true });
             
             if (centralRes.data.token) {
