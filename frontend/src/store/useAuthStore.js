@@ -55,23 +55,22 @@ export const useAuthStore = create((set, get) => ({
     checkAuth: async () => {
         set({ isCheckingAuth: true });
         try {
-            // 1. Try to check auth with our local backend using the token in localStorage
-            // (The axios interceptor handles adding the token)
             const localRes = await axios.get(`${BASE_URL}/users/profile`);
             set({ authUser: localRes.data });
             get().connectSocket();
         } catch (localError) {
-            // 2. If local auth fails, try to "Silent Login" using the Central Auth Service
-            // This is the SSO magic! It checks if the user has a valid cookie on aranid.onrender.com
             try {
                 const centralRes = await axios.get(`${AUTH_URL}/me`, { withCredentials: true });
                 if (centralRes.data.token) {
                     localStorage.setItem("token", centralRes.data.token);
-                    set({ authUser: centralRes.data.user });
+                    const userData = {
+                        ...centralRes.data.user,
+                        profilePic: centralRes.data.user.profilePic || centralRes.data.user.avatar
+                    };
+                    set({ authUser: userData });
                     get().connectSocket();
                 }
             } catch (centralError) {
-                // If both fail, the user is definitely not logged in anywhere
                 set({ authUser: null });
                 localStorage.removeItem("token");
             }
@@ -83,7 +82,7 @@ export const useAuthStore = create((set, get) => ({
     register: async (username, email, password) => {
         set({ isLoggingIn: true });
         try {
-            const res = await axios.post(`${AUTH_URL}/register`, { username, email, password });
+            const res = await axios.post(`${AUTH_URL}/register`, { username, email, password }, { withCredentials: true });
             toast.success(res.data.message);
             return true;
         } catch (error) {
@@ -97,12 +96,16 @@ export const useAuthStore = create((set, get) => ({
     verifyOTP: async (email, otp) => {
         set({ isLoggingIn: true });
         try {
-            const res = await axios.post(`${AUTH_URL}/verify`, { email, otp });
+            const res = await axios.post(`${AUTH_URL}/verify`, { email, otp }, { withCredentials: true });
             
             // SSO Improvement: Auto-login after verification
             if (res.data.token) {
                 localStorage.setItem("token", res.data.token);
-                set({ authUser: res.data.user });
+                const userData = {
+                    ...res.data.user,
+                    profilePic: res.data.user.profilePic || res.data.user.avatar
+                };
+                set({ authUser: userData });
                 get().connectSocket();
             }
 
@@ -119,16 +122,20 @@ export const useAuthStore = create((set, get) => ({
     login: async (email, password) => {
         set({ isLoggingIn: true });
         try {
-            const res = await axios.post(`${AUTH_URL}/login`, { email, password });
+            const res = await axios.post(`${AUTH_URL}/login`, { email, password }, { withCredentials: true });
             
             // Store token for cross-domain auth
             if (res.data.token) {
                 localStorage.setItem("token", res.data.token);
             }
             
-            set({ authUser: res.data.user });
+            const userData = {
+                ...res.data.user,
+                profilePic: res.data.user.profilePic || res.data.user.avatar
+            };
+            set({ authUser: userData });
             get().connectSocket();
-            toast.success(`Welcome back, ${res.data.user.username}!`);
+            toast.success(`Welcome back, ${userData.username}!`);
         } catch (error) {
             toast.error(error.response?.data?.message || "Login failed");
         } finally {
@@ -186,7 +193,7 @@ export const useAuthStore = create((set, get) => ({
 
     forgotPassword: async (email) => {
         try {
-            const res = await axios.post(`${AUTH_URL}/forgotpassword`, { email });
+            const res = await axios.post(`${AUTH_URL}/forgotpassword`, { email }, { withCredentials: true });
             toast.success(res.data.message);
             return true;
         } catch (error) {
@@ -198,7 +205,7 @@ export const useAuthStore = create((set, get) => ({
     resetPassword: async (email, otp, newPassword) => {
         try {
             // auth-service uses PUT and /resetpassword and field 'password' instead of 'newPassword'
-            const res = await axios.put(`${AUTH_URL}/resetpassword`, { email, otp, password: newPassword });
+            const res = await axios.put(`${AUTH_URL}/resetpassword`, { email, otp, password: newPassword }, { withCredentials: true });
             toast.success(res.data.message);
             return true;
         } catch (error) {
@@ -209,7 +216,7 @@ export const useAuthStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            await axios.post(`${AUTH_URL}/logout`);
+            await axios.post(`${AUTH_URL}/logout`, {}, { withCredentials: true });
             localStorage.removeItem("token");
             set({ authUser: null });
             get().disconnectSocket();
