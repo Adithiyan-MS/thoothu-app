@@ -6,58 +6,76 @@ const userSchema = new mongoose.Schema(
         username: {
             type: String,
             required: true,
-            trim: true, // Removes extra spaces
+            trim: true,
+            unique: true,
         },
         email: {
             type: String,
-            required: function() {
-                // Email is required ONLY if the user is not a guest
+            required: function () {
                 return !this.isGuest;
             },
             unique: true,
-            sparse: true, // Allows multiple null/undefined emails (useful for guests)
+            sparse: true,
             trim: true,
         },
         password: {
             type: String,
-            required: function() {
+            required: function () {
                 return !this.isGuest;
             },
+            select: false, // Don't return password by default
         },
         uniqueId: {
             type: String,
-            required: true,
+            required: function () {
+                return !this.isGuest;
+            },
             unique: true,
+            sparse: true,
             trim: true,
         },
         profilePic: {
             type: String,
-            default: "", // Can be a URL from a free image host like Cloudinary later
+            default: "",
+        },
+        avatar: { // For compatibility with auth-service
+            type: String,
+            default: 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
         },
         bio: {
             type: String,
             default: "Hey there! I am using this app.",
             maxLength: 150,
         },
-        // --- Email Verification Fields ---
         isVerified: {
             type: Boolean,
             default: false,
         },
-        verificationOTP: {
+        // Fields from auth-service
+        accountStatus: {
             type: String,
+            enum: ['active', 'suspended', 'pending'],
+            default: 'pending'
         },
-        otpExpiry: {
-            type: Date,
-        },
-        // --- Guest User System ---
+        lastLogin: Date,
+        otp: String,
+        otpExpires: Date,
+        resetPasswordToken: String,
+        resetPasswordExpire: Date,
+        loginAttempts: { type: Number, default: 0 },
+        lockUntil: { type: Number },
+        refreshToken: { type: String },
+
+        // Fields from thoothu-app
+        verificationOTP: String,
+        otpExpiry: Date,
         isGuest: {
             type: Boolean,
             default: false,
         },
         guestMessageCount: {
             type: Number,
-            default: 0, // Will max out at 5 later
+            default: 0,
         }
     },
     {
